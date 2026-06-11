@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Скетчпад</title>
+<style>
+  :root{
+    --bg:#f5efe8; --paper:#fffdf9; --ink:#4a4540;
+    --accent:#c98b8b; --line:#e3d8cc;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px; padding:24px;
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,"Hiragino Sans","Segoe UI",sans-serif;
+  }
+  h1{font-weight:500; font-size:20px; letter-spacing:.04em; margin:0; opacity:.8}
+  .wrap{
+    background:var(--paper); padding:14px; border-radius:18px;
+    box-shadow:0 12px 40px rgba(74,69,64,.12); border:1px solid var(--line);
+  }
+  canvas{display:block; border-radius:10px; touch-action:none; cursor:crosshair; background:#fff}
+  .tools{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center}
+  .swatch{
+    width:26px; height:26px; border-radius:50%; border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--line); cursor:pointer; transition:transform .12s;
+  }
+  .swatch:hover{transform:scale(1.15)}
+  .swatch.active{box-shadow:0 0 0 2px var(--ink)}
+  input[type=range]{accent-color:var(--accent)}
+  button{
+    font:inherit; font-size:13px; padding:7px 14px; border-radius:999px;
+    border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer;
+  }
+  button:hover{background:var(--bg)}
+  .hint{font-size:12px; opacity:.5}
+</style>
+</head>
+<body>
+  <h1>скетчпад 🖌️</h1>
+  <div class="wrap"><canvas id="c" width="420" height="320"></canvas></div>
+  <div class="tools" id="palette"></div>
+  <div class="tools">
+    <label class="hint">розмір</label>
+    <input type="range" id="size" min="1" max="24" value="4" />
+    <button id="clear">очистити</button>
+    <button id="save">зберегти png</button>
+  </div>
+  <div class="hint">намалюй щось і перевір, що воно живе на github 🌸</div>
+
+<script>
+  const c = document.getElementById('c');
+  const ctx = c.getContext('2d');
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  let drawing = false, color = '#4a4540', size = 4;
+
+  const colors = ['#4a4540','#c98b8b','#7a9b8e','#d8a657','#8a7fa8','#6b8cae'];
+  const pal = document.getElementById('palette');
+  colors.forEach((col,i)=>{
+    const s = document.createElement('div');
+    s.className = 'swatch' + (i===0?' active':'');
+    s.style.background = col;
+    s.onclick = ()=>{ color=col; document.querySelectorAll('.swatch').forEach(e=>e.classList.remove('active')); s.classList.add('active'); };
+    pal.appendChild(s);
+  });
+
+  document.getElementById('size').oninput = e => size = +e.target.value;
+  document.getElementById('clear').onclick = ()=> ctx.clearRect(0,0,c.width,c.height);
+  document.getElementById('save').onclick = ()=>{
+    const a = document.createElement('a');
+    a.download = 'sketch.png'; a.href = c.toDataURL(); a.click();
+  };
+
+  function pos(e){
+    const r = c.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - r.left, y: t.clientY - r.top };
+  }
+  function start(e){ drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); }
+  function move(e){ if(!drawing) return; const p=pos(e); ctx.strokeStyle=color; ctx.lineWidth=size; ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); }
+  function end(){ drawing=false; }
+
+  c.addEventListener('mousedown',start); c.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',end);
+  c.addEventListener('touchstart',start); c.addEventListener('touchmove',move);
+  window.addEventListener('touchend',end);
+</script>
+</body>
+</html>
